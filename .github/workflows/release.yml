@@ -1,0 +1,115 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-24.04-arm
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - name: Install musl tools
+        if: contains(matrix.target, 'musl')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - run: cargo build --release --target ${{ matrix.target }}
+      - name: Package (unix)
+        if: runner.os != 'Windows'
+        run: |
+          NAME="gannet-${GITHUB_REF_NAME}-${{ matrix.target }}"
+          mkdir -p dist
+          tar czf "dist/${NAME}.tar.gz" -C "target/${{ matrix.target }}/release" gannet
+          shasum -a 256 "dist/${NAME}.tar.gz" | awk '{print $1}' > "dist/${NAME}.tar.gz.sha256"
+      - name: Package (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $name = "gannet-$env:GITHUB_REF_NAME-${{ matrix.target }}"
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path "target/${{ matrix.target }}/release/gannet.exe" -DestinationPath "dist/$name.zip"
+          (Get-FileHash "dist/$name.zip" -Algorithm SHA256).Hash.ToLower() | Out-File -NoNewline "dist/$name.zip.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Build SHA256SUMS
+        run: |
+          cd dist
+          for f in *.sha256; do
+            printf '%s  %s\n' "$(cat "$f")" "${f%.sha256}" >> SHA256SUMS
+          done
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+
+  homebrew:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Render formula
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          sha() { cat "dist/gannet-${TAG}-$1.sha256"; }
+          sed -e "s/__VERSION__/${VERSION}/g" \
+              -e "s/__TAG__/${TAG}/g" \
+              -e "s/__SHA_DARWIN_ARM__/$(sha aarch64-apple-darwin.tar.gz)/g" \
+              -e "s/__SHA_DARWIN_X86__/$(sha x86_64-apple-darwin.tar.gz)/g" \
+              -e "s/__SHA_LINUX_ARM__/$(sha aarch64-unknown-linux-musl.tar.gz)/g" \
+              -e "s/__SHA_LINUX_X86__/$(sha x86_64-unknown-linux-musl.tar.gz)/g" \
+              packaging/homebrew/gannet.rb.tmpl > gannet.rb
+          cat gannet.rb
+      - uses: actions/checkout@v4
+        with:
+          repository: planesailingio/homebrew-tools
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: tap
+      - name: Push formula to tap
+        run: |
+          mkdir -p tap/Formula
+          cp gannet.rb tap/Formula/gannet.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/gannet.rb
+          git commit -m "gannet ${GITHUB_REF_NAME}"
+          git push
