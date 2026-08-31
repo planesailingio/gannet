@@ -1,23 +1,12 @@
-<div align="center">
-
-# 🐦 gannet
-
-**Install any GitHub release binary with one command. Roll back with another.**
+# gannet
 
 [![CI](https://github.com/planesailingio/gannet/actions/workflows/ci.yml/badge.svg)](https://github.com/planesailingio/gannet/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/planesailingio/gannet?display_name=tag)](https://github.com/planesailingio/gannet/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Built with Rust](https://img.shields.io/badge/built%20with-Rust-orange.svg)](https://www.rust-lang.org/)
 
-*Named after the seabird that dives, grabs, and never comes up empty.*
+Installs CLI tools straight from GitHub releases, and lets you roll back when a new version breaks something.
 
-</div>
-
----
-
-Thousands of brilliant CLI tools ship as GitHub release binaries — and installing them means squinting at a releases page, guessing which of fourteen `.tar.gz` files matches your machine, extracting it, fishing the binary out from between the READMEs, and hoping you remember where you put it when the next version breaks something.
-
-**gannet does all of that in one command.** And because it keeps the previous version on disk, "the next version broke something" is a one-command fix too:
+Loads of good tools only ship as binaries on a GitHub releases page. Installing them by hand means working out which of the fourteen tar.gz files is for your machine, extracting it, digging the binary out, sticking it somewhere on your PATH, and then doing it all again next release. gannet does that bit for you:
 
 ```console
 $ gannet install sharkdp/fd
@@ -28,28 +17,30 @@ $ gannet rollback sharkdp/fd
 rolled sharkdp/fd back to v10.4.0 (was v10.5.0)
 ```
 
-That's it. No manifests, no daemon, no waiting for someone to package the tool for your distro. If it has a GitHub release, you can install it.
+It keeps the previous version of everything on disk, so rollback works instantly and offline. No daemon, no config files, and you don't have to wait for someone to package the tool for your distro. If it has a GitHub release you can install it.
 
-## ✨ Why gannet?
+Named after the seabird. They dive, they grab, they rarely miss.
 
-- ⚡ **One command, any repo** — `gannet install owner/repo`. gannet queries the GitHub API, scores every release asset against your OS and architecture, and picks the right one. Checksums, `.deb`s, `.msi`s and source tarballs are filtered out automatically.
-- ⏪ **Fearless upgrades** — the current *and* previous version of every tool stay on disk. `rollback` swaps a symlink, instantly and offline. `use` pins any version you like, tenv/tfenv-style.
-- 📦 **Archive-savvy** — tar.gz, tgz, zip, gz, or a bare binary; nested folders, missing exec bits, binaries named differently from the repo (`ripgrep` → `rg`) — gannet finds the executable and ignores the packing material.
-- 🪶 **Genuinely lightweight** — a single static Rust binary. No database, no background service, no config format to learn. The entire state is one human-readable JSON file you can `cat`.
-- 🖥️ **Cross-platform** — macOS, Linux, and Windows, on x86_64 and arm64. Symlinks where the OS allows, transparent copy fallback where it doesn't.
-- 🔌 **Ready for more than GitHub** — release sources sit behind a small provider trait, so GitLab and friends can slot in without touching the install pipeline.
+## What it does
 
-## 🚀 Install
+- `gannet install owner/repo` asks the GitHub API for the latest release, scores every asset against your OS and architecture, and picks the right one. Checksums, .debs, .msis and source tarballs get filtered out automatically.
+- Handles tar.gz, tgz, zip, gz, and bare binaries. Copes with nested folders, missing exec bits, and binaries named differently from the repo (ripgrep installs as `rg`).
+- Keeps the current and previous version of each tool. `rollback` just swaps a symlink. `use` pins whatever version you want, a bit like tenv/tfenv.
+- It's a single static Rust binary. No database, no background service. All the state lives in one JSON file you can just cat.
+- Works on macOS, Linux and Windows, x86_64 and arm64. Uses symlinks where the OS allows and falls back to copying where it doesn't.
+- Release sources sit behind a small provider trait, so a GitLab provider (or whatever else) could be added without touching the install pipeline.
 
-**Homebrew** (macOS / Linux):
+## Install
+
+Homebrew (macOS / Linux):
 
 ```sh
 brew install planesailingio/tools/gannet
 ```
 
-**From a release**: grab your platform's archive from the [releases page](https://github.com/planesailingio/gannet/releases) and put `gannet` on your PATH. (Yes, gannet can manage itself: `gannet install planesailingio/gannet`.)
+Or grab your platform's archive from the [releases page](https://github.com/planesailingio/gannet/releases) and put `gannet` somewhere on your PATH. gannet can manage itself after that: `gannet install planesailingio/gannet`.
 
-**From source**:
+Or from source:
 
 ```sh
 make install   # cargo install --path .
@@ -65,12 +56,11 @@ export PATH="$HOME/.gannet/bin:$PATH"
 fish_add_path ~/.gannet/bin
 ```
 
-On Windows, add `%USERPROFILE%\.gannet\bin` to your PATH. Enabling [Developer Mode](https://learn.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development) lets gannet use symlinks; without it, versions are copied instead — everything works, switching is just a touch slower.
+On Windows, add `%USERPROFILE%\.gannet\bin` to your PATH. If you turn on [Developer Mode](https://learn.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development) gannet can use symlinks; without it versions get copied instead, which works fine, switching is just a bit slower.
 
-> [!TIP]
-> Set `GITHUB_TOKEN` (or `GH_TOKEN`) and gannet uses it for the GitHub API — 5,000 requests/hour instead of the anonymous 60.
+Tip: set `GITHUB_TOKEN` (or `GH_TOKEN`) and gannet will use it for GitHub API calls. That gets you 5,000 requests an hour instead of the anonymous 60.
 
-## 🧭 Ninety seconds of gannet
+## Quick tour
 
 ```console
 $ gannet install BurntSushi/ripgrep      # installs the `rg` binary
@@ -81,12 +71,12 @@ BurntSushi/ripgrep rg       15.2.0   -         -
 sharkdp/fd         fd       v10.3.0  -         yes
 
 $ gannet use sharkdp/fd@v10.2.0          # switch versions (fetches if needed)
-$ gannet rollback sharkdp/fd             # instant, offline undo
+$ gannet rollback sharkdp/fd             # undo, instantly, offline
 $ gannet upgrade --all                   # everything to latest
-$ gannet uninstall sharkdp/fd            # gone, cleanly
+$ gannet uninstall sharkdp/fd            # gone
 ```
 
-## 📖 Commands
+## Commands
 
 | Command | What it does |
 | --- | --- |
@@ -97,64 +87,57 @@ $ gannet uninstall sharkdp/fd            # gone, cleanly
 | `rollback <owner>/<repo>` | Switch back to the previous version |
 | `use <owner>/<repo>@<tag>` | Switch to a specific version (fetches it if needed) |
 
-When a release is awkward, `install` has escape hatches:
+For awkward releases, `install` has some escape hatches:
 
 | Flag | Use it when |
 | --- | --- |
-| `--asset <substring>` | Auto-detection picks the wrong asset (e.g. you want the gnu build over musl) |
+| `--asset <substring>` | Auto-detection picks the wrong asset (say you want the gnu build over musl) |
 | `--bin <name>` | The archive ships several executables |
 | `--as <name>` | You want the command under a different name, or two packages collide |
 | `--force` | Reinstall the current version from scratch |
 
-Global: `-v/--verbose` shows the full asset-scoring table — genuinely handy when you're curious *why* gannet picked what it picked. `--gannet-dir <path>` (or `GANNET_DIR`) relocates everything.
+Globally, `-v/--verbose` prints the full asset-scoring table, which is handy when you want to know why gannet picked what it picked. `--gannet-dir <path>` (or `GANNET_DIR`) moves everything somewhere else.
 
-## 🔍 How it works
+## How it works
 
-No magic, just a tidy directory and a symlink:
+There's no magic here, just a directory and a symlink:
 
 ```text
 ~/.gannet/
 ├── state.json                      # the entire "database"
-├── bin/                            # ← the only thing on your PATH
+├── bin/                            # the only thing on your PATH
 │   └── fd -> ../packages/sharkdp/fd/v10.5.0/fd
 ├── packages/
 │   └── sharkdp/fd/
 │       ├── v10.5.0/fd              # current
-│       └── v10.2.0/fd              # previous — rollback always has a target
+│       └── v10.2.0/fd              # previous, so rollback always has a target
 └── tmp/                            # staging during installs
 ```
 
-- **Asset selection** scores each asset for your platform (`darwin`/`linux`/`windows`, `arm64`/`x86_64`, and all their aliases), preferring musl/static builds on Linux and msvc on Windows.
-- **Retention** keeps exactly two versions per tool: the one you're using and the one you used before. Installing a third prunes the oldest — disk usage stays flat and rollback always works.
-- **Atomicity**: downloads stage under `~/.gannet/tmp` and move into place with a rename; state writes go through temp-file-and-rename. A failed install leaves your working version untouched.
-- **Safety**: archives that try to escape the extraction directory (zip-slip) are rejected outright.
+Asset selection scores each release asset for your platform (darwin/linux/windows, arm64/x86_64, plus all the aliases people use in filenames), preferring musl/static builds on Linux and msvc on Windows.
 
-## 🚧 Not yet (contributions welcome!)
+gannet keeps exactly two versions per tool: the one you're on and the one before it. Installing a third prunes the oldest, so disk usage stays flat and rollback always works.
 
-- `.tar.xz`, `.zst`, `.bz2`, `.7z` assets — gannet currently tells you and lists the alternatives. *The top fast-follow.*
+Downloads stage under `~/.gannet/tmp` and move into place with a rename, and state writes go through a temp file and rename too. A failed install leaves your working version alone. Archives that try to escape the extraction directory (zip-slip) are rejected.
+
+## Not done yet
+
+- .tar.xz, .zst, .bz2 and .7z assets. Right now gannet tells you and lists the alternatives. This is top of the list.
 - Checksum/signature verification of downloads.
-- Private repositories, and a GitLab provider (the trait is waiting).
-- Locking for concurrent gannet invocations.
+- Private repos, and a GitLab provider (the trait is there waiting).
+- Locking for concurrent gannet runs.
 
-Spotted a release gannet mis-detects? [Open an issue](https://github.com/planesailingio/gannet/issues) with the repo name — asset-naming heuristics only get better with real-world counterexamples, and the scoring is table-driven and easy to extend.
+If gannet picks the wrong asset for some repo, [open an issue](https://github.com/planesailingio/gannet/issues) with the repo name. The scoring is table driven and easy to extend, and the heuristics only get better with real counterexamples.
 
-## 🛠️ Developing
+## Developing
 
 ```sh
-make check    # fmt + clippy + tests — what CI runs
+make check    # fmt + clippy + tests, same as CI
 make build
 ```
 
-Releases are automated: push a `v*` tag and CI builds macOS (arm64/x86_64), Linux (musl arm64/x86_64) and Windows binaries, publishes a GitHub release with `SHA256SUMS`, and pushes an updated formula to [planesailingio/homebrew-tools](https://github.com/planesailingio/homebrew-tools). (Maintainers: the tap push needs a `HOMEBREW_TAP_TOKEN` secret — a fine-grained PAT with contents read/write on the tap repo.)
+Releases are automated: push a `v*` tag and CI builds macOS (arm64/x86_64), Linux (musl arm64/x86_64) and Windows binaries, publishes a GitHub release with `SHA256SUMS`, and pushes an updated formula to [planesailingio/homebrew-tools](https://github.com/planesailingio/homebrew-tools). Maintainers: the tap push needs a `HOMEBREW_TAP_TOKEN` secret, a fine-grained PAT with contents read/write on the tap repo.
 
-## 📄 License
+## License
 
 [MIT](LICENSE) © Rhys Evans
-
----
-
-<div align="center">
-
-*If gannet saved you a trip to a releases page, consider giving it a ⭐*
-
-</div>
