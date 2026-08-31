@@ -51,7 +51,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           Compress-Archive -Path "target/${{ matrix.target }}/release/gannet.exe" -DestinationPath "dist/$name.zip"
           (Get-FileHash "dist/$name.zip" -Algorithm SHA256).Hash.ToLower() | Out-File -NoNewline "dist/$name.zip.sha256"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist-${{ matrix.target }}
           path: dist/*
@@ -61,7 +61,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
