@@ -31,6 +31,20 @@ struct ApiAsset {
 impl Github {
     pub fn new() -> Self {
         let config = Agent::config_builder().http_status_as_error(false).build();
+        Self::with_config(config)
+    }
+
+    /// A client for tab-completion lookups: identical to `new()` but with a
+    /// short global timeout so a TAB press can never hang the shell.
+    pub fn for_completion() -> Self {
+        let config = Agent::config_builder()
+            .http_status_as_error(false)
+            .timeout_global(Some(std::time::Duration::from_secs(2)))
+            .build();
+        Self::with_config(config)
+    }
+
+    fn with_config(config: ureq::config::Config) -> Self {
         let token = ["GITHUB_TOKEN", "GH_TOKEN"]
             .iter()
             .find_map(|v| std::env::var(v).ok())
@@ -39,6 +53,51 @@ impl Github {
             agent: Agent::new_with_config(config),
             token,
         }
+    }
+
+    /// Names of an owner's public repositories, capped at `max_pages` * 100.
+    /// The /users/ endpoint serves both user and organization accounts.
+    pub fn list_repos(&self, owner: &str, max_pages: usize) -> Result<Vec<String>> {
+        #[derive(Deserialize)]
+        struct ApiRepo {
+            name: String,
+        }
+        let mut names = Vec::new();
+        for page in 1..=max_pages {
+            let url = format!("{API_ROOT}/users/{owner}/repos?per_page=100&page={page}");
+            let mut resp = self.get(&url)?;
+            if resp.status().as_u16() != 200 {
+                bail!("GitHub API returned HTTP {} for {url}", resp.status());
+            }
+            let repos: Vec<ApiRepo> = resp
+                .body_mut()
+                .read_json()
+                .context("could not parse the GitHub API response")?;
+            let last_page = repos.len() < 100;
+            names.extend(repos.into_iter().map(|r| r.name));
+            if last_page {
+                break;
+            }
+        }
+        Ok(names)
+    }
+
+    /// Release tag names for a repository, newest first (first 100 releases).
+    pub fn list_release_tags(&self, owner: &str, repo: &str) -> Result<Vec<String>> {
+        #[derive(Deserialize)]
+        struct ApiTag {
+            tag_name: String,
+        }
+        let url = format!("{API_ROOT}/repos/{owner}/{repo}/releases?per_page=100");
+        let mut resp = self.get(&url)?;
+        if resp.status().as_u16() != 200 {
+            bail!("GitHub API returned HTTP {} for {url}", resp.status());
+        }
+        let releases: Vec<ApiTag> = resp
+            .body_mut()
+            .read_json()
+            .context("could not parse the GitHub API response")?;
+        Ok(releases.into_iter().map(|r| r.tag_name).collect())
     }
 
     fn get(&self, url: &str) -> Result<Response<ureq::Body>> {

@@ -32,6 +32,9 @@ class Gannet < Formula
 
   def install
     bin.install "gannet"
+    bash_completion.install "completions/gannet.bash" => "gannet"
+    zsh_completion.install "completions/_gannet"
+    fish_completion.install "completions/gannet.fish"
   end
 
   test do

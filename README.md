@@ -60,6 +60,25 @@ On Windows, add `%USERPROFILE%\.gannet\bin` to your PATH. If you turn on [Develo
 
 Tip: set `GITHUB_TOKEN` (or `GH_TOKEN`) and gannet will use it for GitHub API calls. That gets you 5,000 requests an hour instead of the anonymous 60.
 
+### Shell completion
+
+Tab completion is dynamic: `gannet install sharkdp/<TAB>` actually asks GitHub for sharkdp's repos, `gannet install sharkdp/fd@<TAB>` lists release tags, and `gannet uninstall <TAB>` offers what you have installed. Lookups are cached for an hour under `~/.gannet/cache/` so repeat tabs are instant, and `GITHUB_TOKEN` raises the rate limit here just like it does for installs. If you use fzf-tab in zsh the candidates come up in the fuzzy menu automatically.
+
+If you installed with Homebrew the completions are already in place (bash users may need `brew install bash-completion@2`). Otherwise it's one line in your shell config:
+
+```sh
+# bash (~/.bashrc)
+source <(COMPLETE=bash gannet)
+
+# zsh (~/.zshrc)
+source <(COMPLETE=zsh gannet)
+
+# fish (~/.config/fish/config.fish)
+COMPLETE=fish gannet | source
+```
+
+One caveat: completion honours `GANNET_DIR` reliably, but `--gannet-dir` on the command line only on a best-effort basis.
+
 ## Quick tour
 
 ```console

@@ -3,6 +3,9 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use clap::{Parser, Subcommand};
+use clap_complete::engine::{ArgValueCandidates, ArgValueCompleter};
+
+use crate::complete;
 
 /// A package reference: `owner/repo` with an optional `@tag`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -74,6 +77,7 @@ pub enum Command {
     /// Install a package from its latest (or a pinned) GitHub release
     Install {
         /// Package as <owner>/<repo> or <owner>/<repo>@<tag>
+        #[arg(add = ArgValueCompleter::new(complete::complete_install_spec))]
         spec: PackageSpec,
         /// Binary to pick when the archive contains several executables
         #[arg(long, value_name = "NAME")]
@@ -91,16 +95,19 @@ pub enum Command {
     /// Remove a package and all of its installed versions
     Uninstall {
         /// Package as <owner>/<repo>
+        #[arg(add = ArgValueCandidates::new(complete::installed_spec_candidates))]
         spec: PackageSpec,
     },
     /// List installed packages (or show details for one)
     List {
         /// Package as <owner>/<repo>
+        #[arg(add = ArgValueCandidates::new(complete::installed_spec_candidates))]
         spec: Option<PackageSpec>,
     },
     /// Upgrade a package (or everything) to the latest release
     Upgrade {
         /// Package as <owner>/<repo>
+        #[arg(add = ArgValueCandidates::new(complete::installed_spec_candidates))]
         spec: Option<PackageSpec>,
         /// Upgrade every installed package
         #[arg(long, conflicts_with = "spec")]
@@ -109,14 +116,17 @@ pub enum Command {
     /// Switch back to the previously used version
     Rollback {
         /// Package as <owner>/<repo>
+        #[arg(add = ArgValueCandidates::new(complete::installed_spec_candidates))]
         spec: PackageSpec,
     },
     /// Switch to a specific version, downloading it if needed
     #[command(name = "use")]
     Use {
         /// Package as <owner>/<repo>@<tag> (or pass the tag as a second argument)
+        #[arg(add = ArgValueCompleter::new(complete::complete_use_spec))]
         spec: PackageSpec,
         /// Version tag (alternative to the @<tag> form)
+        #[arg(add = ArgValueCompleter::new(complete::complete_use_tag))]
         tag: Option<String>,
     },
 }

@@ -1,6 +1,7 @@
 pub mod archive;
 pub mod cli;
 pub mod commands;
+pub mod complete;
 pub mod link;
 pub mod paths;
 pub mod platform;

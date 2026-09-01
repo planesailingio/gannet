@@ -1,9 +1,13 @@
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 use gannet::cli::{Cli, Command};
 use gannet::commands::install::InstallOpts;
 use gannet::{Ctx, commands, link, paths};
 
 fn main() {
+    // Handles shell completion requests (COMPLETE=<shell>) and exits; a
+    // no-op otherwise. Must run before parse so TAB presses never touch
+    // the filesystem via Dirs::new/sweep_old below.
+    clap_complete::CompleteEnv::with_factory(Cli::command).complete();
     let cli = Cli::parse();
     if let Err(e) = run(cli) {
         eprintln!("error: {e:#}");

@@ -39,9 +39,24 @@ jobs:
       - name: Package (unix)
         if: runner.os != 'Windows'
         run: |
+          # Generate the completion registration scripts from the built binary,
+          # invoked by bare name so they embed "gannet" (resolved on the end
+          # user's PATH at completion time). x86_64-apple-darwin runs under
+          # Rosetta on the arm64 macOS runners.
+          export PATH="$PWD/target/${{ matrix.target }}/release:$PATH"
+          mkdir -p stage/completions
+          COMPLETE=bash gannet > stage/completions/gannet.bash
+          COMPLETE=fish gannet > stage/completions/gannet.fish
+          # The zsh file is autoloaded from fpath, where compsys convention
+          # wants the file to end by invoking the completer; the funcstack
+          # guard keeps it a no-op if the file is sourced directly instead.
+          { COMPLETE=zsh gannet
+            printf '\nif [ "$funcstack[1]" = "_gannet" ]; then\n    _clap_dynamic_completer_gannet "$@"\nfi\n'
+          } > stage/completions/_gannet
+          cp "target/${{ matrix.target }}/release/gannet" stage/
           NAME="gannet-${GITHUB_REF_NAME}-${{ matrix.target }}"
           mkdir -p dist
-          tar czf "dist/${NAME}.tar.gz" -C "target/${{ matrix.target }}/release" gannet
+          tar czf "dist/${NAME}.tar.gz" -C stage gannet completions
           shasum -a 256 "dist/${NAME}.tar.gz" | awk '{print $1}' > "dist/${NAME}.tar.gz.sha256"
       - name: Package (windows)
         if: runner.os == 'Windows'
