@@ -7,6 +7,14 @@ use clap_complete::engine::{ArgValueCandidates, ArgValueCompleter};
 
 use crate::complete;
 
+/// "X.Y.Z (abc1234)" — sha injected by build.rs via GANNET_BUILD_SHA.
+const VERSION: &str = concat!(
+    env!("CARGO_PKG_VERSION"),
+    " (",
+    env!("GANNET_BUILD_SHA"),
+    ")"
+);
+
 /// A package reference: `owner/repo` with an optional `@tag`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PackageSpec {
@@ -58,7 +66,7 @@ impl FromStr for PackageSpec {
 }
 
 #[derive(Parser)]
-#[command(name = "gannet", version, about = "A lightweight package manager for GitHub release binaries", long_about = None)]
+#[command(name = "gannet", version = VERSION, about = "A lightweight package manager for GitHub release binaries", long_about = None)]
 pub struct Cli {
     /// Print extra detail (asset scoring, API calls)
     #[arg(short, long, global = true)]
@@ -128,5 +136,11 @@ pub enum Command {
         /// Version tag (alternative to the @<tag> form)
         #[arg(add = ArgValueCompleter::new(complete::complete_use_tag))]
         tag: Option<String>,
+    },
+    /// Print the shell completion setup script
+    Completion {
+        /// Shell to generate for (default: detected from $SHELL)
+        #[arg(value_parser = crate::commands::completion::SHELLS)]
+        shell: Option<String>,
     },
 }

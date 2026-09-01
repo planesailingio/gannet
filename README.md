@@ -64,17 +64,14 @@ Tip: set `GITHUB_TOKEN` (or `GH_TOKEN`) and gannet will use it for GitHub API ca
 
 Tab completion is dynamic: `gannet install sharkdp/<TAB>` actually asks GitHub for sharkdp's repos, `gannet install sharkdp/fd@<TAB>` lists release tags, and `gannet uninstall <TAB>` offers what you have installed. Lookups are cached for an hour under `~/.gannet/cache/` so repeat tabs are instant, and `GITHUB_TOKEN` raises the rate limit here just like it does for installs. If you use fzf-tab in zsh the candidates come up in the fuzzy menu automatically.
 
-If you installed with Homebrew the completions are already in place (bash users may need `brew install bash-completion@2`). Otherwise it's one line in your shell config:
+If you installed with Homebrew the completions are already in place (bash users may need `brew install bash-completion@2`). Otherwise it's one line in your shell config. `gannet completion` detects your shell from `$SHELL`, or you can name one (`bash`, `zsh`, `fish`, `powershell`, `elvish`):
 
 ```sh
-# bash (~/.bashrc)
-source <(COMPLETE=bash gannet)
-
-# zsh (~/.zshrc)
-source <(COMPLETE=zsh gannet)
+# bash (~/.bashrc) / zsh (~/.zshrc)
+source <(gannet completion)
 
 # fish (~/.config/fish/config.fish)
-COMPLETE=fish gannet | source
+gannet completion fish | source
 ```
 
 One caveat: completion honours `GANNET_DIR` reliably, but `--gannet-dir` on the command line only on a best-effort basis.
@@ -151,11 +148,14 @@ If gannet picks the wrong asset for some repo, [open an issue](https://github.co
 ## Developing
 
 ```sh
+make hooks    # once after cloning: enables the pre-commit hook (fmt + tests)
 make check    # fmt + clippy + tests, same as CI
 make build
 ```
 
-Releases are automated: push a `v*` tag and CI builds macOS (arm64/x86_64), Linux (musl arm64/x86_64) and Windows binaries, publishes a GitHub release with `SHA256SUMS`, and pushes an updated formula to [planesailingio/homebrew-tools](https://github.com/planesailingio/homebrew-tools). Maintainers: the tap push needs a `HOMEBREW_TAP_TOKEN` secret, a fine-grained PAT with contents read/write on the tap repo.
+`make build-release` produces an optimized local build.
+
+Releases are cut with `make release VERSION=X.Y.Z`, which runs `make check`, bumps `Cargo.toml`/`Cargo.lock`, commits, tags `vX.Y.Z`, and pushes branch and tag together. From there everything is automated: push a `v*` tag and CI builds macOS (arm64/x86_64), Linux (musl arm64/x86_64) and Windows binaries, publishes a GitHub release with `SHA256SUMS`, and pushes an updated formula to [planesailingio/homebrew-tools](https://github.com/planesailingio/homebrew-tools). Maintainers: the tap push needs a `HOMEBREW_TAP_TOKEN` secret, a fine-grained PAT with contents read/write on the tap repo.
 
 ## License
 

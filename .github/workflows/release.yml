@@ -45,12 +45,12 @@ jobs:
           # Rosetta on the arm64 macOS runners.
           export PATH="$PWD/target/${{ matrix.target }}/release:$PATH"
           mkdir -p stage/completions
-          COMPLETE=bash gannet > stage/completions/gannet.bash
-          COMPLETE=fish gannet > stage/completions/gannet.fish
+          gannet completion bash > stage/completions/gannet.bash
+          gannet completion fish > stage/completions/gannet.fish
           # The zsh file is autoloaded from fpath, where compsys convention
           # wants the file to end by invoking the completer; the funcstack
           # guard keeps it a no-op if the file is sourced directly instead.
-          { COMPLETE=zsh gannet
+          { gannet completion zsh
             printf '\nif [ "$funcstack[1]" = "_gannet" ]; then\n    _clap_dynamic_completer_gannet "$@"\nfi\n'
           } > stage/completions/_gannet
           cp "target/${{ matrix.target }}/release/gannet" stage/

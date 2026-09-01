@@ -1,3 +1,4 @@
+pub mod completion;
 pub mod install;
 pub mod list;
 pub mod rollback;

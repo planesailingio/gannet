@@ -1,0 +1,9 @@
+#!/bin/sh
+# Pre-commit: fail fast on formatting, then compile everything and run tests.
+# --all-targets compiles lib, bins, and all test targets, and runs unit +
+# integration tests. Bypass with `git commit --no-verify` if you must.
+set -e
+echo "pre-commit: cargo fmt --check"
+cargo fmt --check
+echo "pre-commit: cargo test --all-targets"
+cargo test --all-targets

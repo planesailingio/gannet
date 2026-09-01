@@ -266,3 +266,17 @@ fn tags_cache_round_trips() {
     });
     assert_eq!(cached, names);
 }
+
+#[test]
+fn shell_from_path_forms() {
+    use gannet::commands::completion::shell_from_path;
+    assert_eq!(shell_from_path("/bin/zsh"), Some("zsh"));
+    assert_eq!(shell_from_path("/usr/local/bin/fish"), Some("fish"));
+    assert_eq!(shell_from_path("bash"), Some("bash"));
+    assert_eq!(
+        shell_from_path(r"C:\Program Files\PowerShell\pwsh.exe"),
+        Some("pwsh.exe")
+    );
+    assert_eq!(shell_from_path(""), None);
+    assert_eq!(shell_from_path("/bin/"), None);
+}

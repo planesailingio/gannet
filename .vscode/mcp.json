@@ -1,0 +1,14 @@
+{
+  "servers": {
+    "vexp": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/Users/rhys/.vscode/extensions/vexp.vexp-vscode-3.1.0-darwin-arm64/dist/mcp-server.cjs"
+      ],
+      "env": {
+        "VEXP_WORKSPACE": "/Users/rhys/git/spm"
+      }
+    }
+  }
+}

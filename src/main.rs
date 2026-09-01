@@ -16,6 +16,11 @@ fn main() {
 }
 
 fn run(cli: Cli) -> anyhow::Result<()> {
+    // No Ctx for `completion`: printing a script shouldn't create ~/.gannet.
+    if let Command::Completion { shell } = &cli.command {
+        return commands::completion::run(shell.as_deref());
+    }
+
     let ctx = Ctx {
         dirs: paths::Dirs::new(cli.gannet_dir)?,
         verbose: cli.verbose,
@@ -44,5 +49,6 @@ fn run(cli: Cli) -> anyhow::Result<()> {
         Command::Upgrade { spec, all } => commands::upgrade::run(&ctx, spec.as_ref(), *all),
         Command::Rollback { spec } => commands::rollback::run(&ctx, spec),
         Command::Use { spec, tag } => commands::use_cmd::run(&ctx, spec, tag.as_deref()),
+        Command::Completion { .. } => unreachable!("handled before Ctx is built"),
     }
 }
