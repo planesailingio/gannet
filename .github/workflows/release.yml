@@ -86,7 +86,7 @@ jobs:
           for f in *.sha256; do
             printf '%s  %s\n' "$(cat "$f")" "${f%.sha256}" >> SHA256SUMS
           done
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: dist/*
           generate_release_notes: true
